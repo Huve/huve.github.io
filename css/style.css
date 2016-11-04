@@ -1,14 +1,30 @@
 body{
-text-align: center;
-background-color: #EEEEEE;
+    text-align: center;
+    background-color: #EEEEEE;
+}
+
+h1{
+    font-family: 'Roboto', sans-serif;
+}
+
+h2{
+    font-family: 'Roboto', sans-serif;
 }
 
 .autopost{
-display: inline-block;
-text-align: center;
-width: 80%;
-background-color: white;
-box-shadow: 3px 3px 5px #BDBDBD;
-border-top: 1px solid #BDBDBD;
-border-left: 1px solid #BDBDBD;
+    margin:auto;
+    margin-top:5px;
+    display: inline-block;
+    text-align: center;
+    width: 500px;
+    background-color: white;
+    box-shadow: 3px 3px 5px #BDBDBD;
+    border-top: 1px solid #BDBDBD;
+    border-left: 1px solid #BDBDBD;
 }
+
+.autopost:hover{
+    cursor:pointer;
+    background-color:#e3f2fd;
+}
+
