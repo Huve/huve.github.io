@@ -1,6 +1,6 @@
 body{
     text-align: center;
-    background-color: #EEEEEE;
+    background-color: #FAFAFA;
 }
 
 h1{
@@ -16,7 +16,6 @@ h2{
     margin-top:5px;
     display: inline-block;
     text-align: center;
-    width: 500px;
     background-color: white;
     box-shadow: 3px 3px 5px #BDBDBD;
     border-top: 1px solid #BDBDBD;
@@ -28,3 +27,31 @@ h2{
     background-color:#e3f2fd;
 }
 
+#titlebar {
+	text-align:left;
+    background-color: #607D8B;
+    position:fixed;
+    top:0;
+    width: 100%;
+	left:0;
+    z-index:100;
+	margin:auto;
+	color:white;
+}
+
+#titleheader{
+  margin-left:50px;
+}
+
+#titlespacer{
+	text-align:left;
+    background-color: red;
+    top:0;
+    width: 100%;
+	left:0;
+	margin:auto;
+}
+
+#oneliner{
+  margin-left:50px;
+}
