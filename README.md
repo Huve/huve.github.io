@@ -1,2 +1,2 @@
 # huve.github.io
-site for weird stuff
+Current demo for WISE sampling distribution of the mean

@@ -1,6 +1,29 @@
 <!DOCTYPE html>
-<body>
-Hello Word
-dfgdg aaa sdss dd bb d sdfsdf
-</body>
+<head>
+    <script type="text/javascript" src="../scripts/d3/d3.min.js"></script>
+    <script type="text/javascript" src="scripts/statistics.js"></script>
+    <script type="text/javascript" src="scripts/graphing.js"></script>
+    <script type="text/javascript" src="scripts/main.js"></script>
+    <link href="css/style.css" rel="stylesheet" type="text/css"/>
+    <title>Sampling Distribution of the Mean</title>
+</head>
+    <body>
+        <div id="graph">
+        </div>
+        <div id="controlcontainer">
+            <select id="distributiontype">
+                <option value="normal">Normal (M = 100, SD = 10)</option>
+                <option value="normal2">Normal (M = 100, SD = 5)</option>
+                <option value="normal3">Normal (M = 100, SD = 2)</option>
+            </select>
+                <div id="samplesizetext">N = </div><input type="text" id="samplesize" /><br>
+            <div id="displaycontainer">
+                <span class="controlheader"> Display: </span><br>
+                <input type="radio" name="displaytype" value="sample" class="radiocontrol" id="displaysample" checked /> <label for="displaysample">Sample</label> <br>
+                <input type="radio" name="displaytype" value="means" class="radiocontrol" id="displaymeans" /> <label for="displaymeans">Means</label>
+            </div>
+            <input type="button" id="sample" value="Sample" />
+            <div id="stats"></div>
+        </div>
+    </body
 </html>
