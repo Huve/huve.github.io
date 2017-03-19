@@ -1,10 +1,13 @@
 <!DOCTYPE html>
 <head>
-    <script type="text/javascript" src="scripts/d3.min.js"></script>
+    <script type="text/javascript" src="https://code.jquery.com/jquery-3.2.0.min.js"></script>
+	<script type="text/javascript" src="https://code.jquery.com/ui/1.12.1/jquery-ui.js"></script>
+    <script type="text/javascript" src="scripts/d3/d3.min.js"></script>
     <script type="text/javascript" src="scripts/statistics.js"></script>
     <script type="text/javascript" src="scripts/graphing.js"></script>
     <script type="text/javascript" src="scripts/main.js"></script>
     <link href="css/style.css" rel="stylesheet" type="text/css"/>
+    <link rel="stylesheet" href="scripts/base/jquery-ui.css">
     <title>Sampling Distribution of the Mean</title>
 </head>
     <body>
@@ -12,11 +15,18 @@
         </div>
         <div id="controlcontainer">
             <select id="distributiontype">
-                <option value="normal">Normal (M = 100, SD = 10)</option>
-                <option value="normal2">Normal (M = 100, SD = 5)</option>
-                <option value="normal3">Normal (M = 100, SD = 2)</option>
+                <option value="normal">Normal (&#956; = 100, &#963; = 10)</option>
+                <option value="normal2">Normal (&#956; = 100, &#963; = 5)</option>
+                <option value="normal3">Normal (&#956; = 100, &#963; = 2)</option>
             </select>
-                <div id="samplesizetext">N = </div><input type="text" id="samplesize" /><br>
+            <br>
+                <!--<div id="samplesizetext">N = </div><input type="text" id="samplesize" /><br> -->
+                
+                <div style="width:150px; top:20px" id="slider" title="Slide this to adjust sample size"></div>
+                <br>
+                <input type="text" value="text" name="something" id="samplesize" size="150" style="text-align:center; font-weight:bold; border:0; font-size:18px; color:black; width:150px;" readonly>
+                <div id="currentn" style="display:none;">10</div>
+			<br>
             <div id="displaycontainer">
                 <span class="controlheader"> Display: </span><br>
                 <input type="radio" name="displaytype" value="sample" class="radiocontrol" id="displaysample" checked /> <label for="displaysample">Sample</label> <br>

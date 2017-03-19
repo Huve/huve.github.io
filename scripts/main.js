@@ -7,14 +7,15 @@ window.onload=(function(){
       */
     function __init__(){
         // Initial parameter values.
+        // Bins = number of bins
+        // Pop mean - population mean, etc
         BINS = 1000;
         POP_MEAN = 100;
         POP_SD = 10;
-        DEFAULT_SAMPLE_SIZE = 25; 
+        DEFAULT_SAMPLE_SIZE = 10; 
         
         // Set initial parameter values.
-        document.getElementById("samplesize").value = DEFAULT_SAMPLE_SIZE;
-        
+        setSampleSize(DEFAULT_SAMPLE_SIZE);
         // Create the histograms.
         graphDimensions = calculateGraphDimensions(window.innerWidth);
         svg = createGraph("graph", graphDimensions.width, graphDimensions.height);
@@ -23,7 +24,7 @@ window.onload=(function(){
         
         // Draw a sample when the sample button is clicked
         document.getElementById('sample').onclick = function() {
-           n = document.getElementById("samplesize").value;            
+           n = getSampleSize();            
            var sample = sampleData(POPULATION.data, n);
            var sampleMean = roundNumber(calculateAverage(sample), 2);
            var sampleSD = roundNumber(calculateStandardDev(sample), 2);
@@ -33,8 +34,8 @@ window.onload=(function(){
 
         }
         
-        var sampleBox = document.getElementById("samplesize");
-        sampleBox.addEventListener("keyup", keyHandler, false);
+        //var sampleBox = document.getElementById("samplesize");
+        //sampleBox.addEventListener("keyup", keyHandler, false);
       
         // Change the population when a new option is chosen.
         var popDropDown = document.getElementById("distributiontype");
@@ -49,7 +50,7 @@ window.onload=(function(){
       * @param {string} newPopulation The codename for the new population.
       */
     function changePopulation(newPopulation){
-        var sampleSize = document.getElementById("samplesize").value;
+        var sampleSize = getSampleSize();
         if (newPopulation == "normal"){
             POP_SD = 10;
             POPULATION.updateSd(POP_SD);
@@ -119,7 +120,7 @@ window.onload=(function(){
       */
     function displaySampleStats(sampleMean, sampleSD){
         var meanText = "Sample mean: " +  sampleMean;
-        var sdText = "Sample sd: " + sampleSD;
+        var sdText = "Sample SD: " + sampleSD;
         var container = document.getElementById("stats");
         clearContainer("stats");
         appendChildElement(meanText, container, "div");
@@ -135,7 +136,7 @@ window.onload=(function(){
       * @param {string} color The color to draw the histogram.
       * @return draws the histogram on the svg.
       */
-    function drawSampleData(svg, sampleBins, color="orange"){
+    function drawSampleData(svg, sampleBins, color="black"){
       clearFromGraph(".sample");
       var binnedSample = getBins(POPULATION, sampleBins);
       for (var i = 0; i < binnedSample.length; i++){
@@ -193,19 +194,59 @@ window.onload=(function(){
     function clearFromGraph(identifier){
         var selection = d3.selectAll(identifier).remove();
     }
+    
+    /**
+      * Gets the current sample size.
+      */
+    function getSampleSize(){
+        var sampleSize = document.getElementById("currentn").value;
+        return sampleSize;
+    }
+    
+    /**
+      * Sets the current sample size to a value.
+      *
+      * @param {int} sampleSize The size of the sample to be set.
+      * @param {boolean} stop Whether or not the slider is stopped.
+      */
+    function setSampleSize(sampleSize, stop=false){
+        var sampleSizeHolder = document.getElementById("currentn");
+        sampleSizeHolder.value = sampleSize;
+        document.getElementById("samplesize").value = "N = " + sampleSize;
+       if(stop){
+            var newSEM = POP_SD / Math.sqrt(sampleSize);
+            SDM.updateSd(newSEM);
+        }
+    }
    
    
     /**
       * Handles key events.
       * @param {event} e The event object.
-      */
+      
     function keyHandler(e){
         if (document.activeElement.id == "samplesize"){
             var sampleSize = document.getElementById("samplesize").value;
             var newSEM = POP_SD / Math.sqrt(sampleSize);
             SDM.updateSd(newSEM);
         }
-    }
+    } */
+    
+    /* --- jQUERY slider --- */
+    $( "#slider" ).slider({
+        slide: function( event, ui ) {
+            setSampleSize(ui.value);
+         },
+         stop: function (event, ui){
+            setSampleSize(ui.value, stop=true);
+         }
+    });
+
+    $( "#slider" ).slider({ max: 99 });
+    $( "#slider" ).slider({ min: 10 });
+    $( "#slider" ).slider({ step: 1 });
+    $( "#slider" ).slider({ value: 10 });
+    $("#samplesize").val("N = " + $( "#slider" ).slider("value"));
 
     
     __init__();
