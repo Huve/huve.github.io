@@ -17,13 +17,14 @@ function bar(c, x, y, w, h, svg){
       */
     this.y = y;
     this.h = h;
-    this.draw = function(fill, opacity=.5){
+    this.draw = function(fill, opacity=1){
         this.bar = svg.append('rect');
         this.bar.attr('x', x)
         .attr('y', y)
         .attr('width', w)
         .attr('height', h)
         .attr('fill', fill)
+        .attr('stroke', fill)
         .attr('class', c)
         .style({'opacity': opacity});
     }
@@ -38,6 +39,21 @@ function bar(c, x, y, w, h, svg){
         .attr('height', h); 
     }
     return this;
+}
+
+/**
+  * Hides a distribution.
+  * @param {string} distributionClass The classname of the bars in the distribution.
+  * @param {int} graphHeight The height of the graph.
+  */
+function hideDistribution(distributionClass, graphHeight){
+    var allBars = d3.selectAll("." + distributionClass);
+    for (b = 0; b < allBars[0].length; b ++){
+        var thisBar = d3.select(allBars[0][b]);
+        thisBar.transition()
+        .attr('y', graphHeight)
+        .duration(500);
+    }        
 }
 
 

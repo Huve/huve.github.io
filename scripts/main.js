@@ -24,13 +24,19 @@ window.onload=(function(){
         
         // Draw a sample when the sample button is clicked
         document.getElementById('sample').onclick = function() {
-           n = getSampleSize();            
-           var sample = sampleData(POPULATION.data, n);
-           var sampleMean = roundNumber(calculateAverage(sample), 2);
-           var sampleSD = roundNumber(calculateStandardDev(sample), 2);
-           drawSampleData(svg, sample); 
-           drawSampleMean(svg, sampleMean);
-           displaySampleStats(sampleMean, sampleSD);
+            var displayType = document.querySelector('input[name="displaytype"]:checked').value;
+            n = getSampleSize();            
+            var sample = sampleData(POPULATION.data, n);
+            var sampleMean = roundNumber(calculateAverage(sample), 2);
+            var sampleSD = roundNumber(calculateStandardDev(sample), 2);
+            if (displayType == "sample"){
+                drawSampleData(svg, sample); 
+                drawSampleMean(svg, sampleMean);
+            }
+            else{
+                drawSampleMean(svg, sampleMean);
+            }
+            displaySampleStats(sampleMean, sampleSD);
 
         }
         
@@ -62,9 +68,10 @@ window.onload=(function(){
             SDM.updateSd(POP_SD/Math.sqrt(sampleSize));
         }
         else if (newPopulation == "normal3"){
-            POP_SD = 2;
-            POPULATION.updateSd(POP_SD);
-            SDM.updateSd(POP_SD/Math.sqrt(sampleSize));
+            //POP_SD = 2;
+            //POPULATION.updateSd(POP_SD);
+            //SDM.updateSd(POP_SD/Math.sqrt(sampleSize));
+            hideDistribution("sample", graphDimensions.height);
         }
         POPULATION.createData();
     }
@@ -218,19 +225,13 @@ window.onload=(function(){
             SDM.updateSd(newSEM);
         }
     }
-   
-   
-    /**
-      * Handles key events.
-      * @param {event} e The event object.
-      
-    function keyHandler(e){
-        if (document.activeElement.id == "samplesize"){
-            var sampleSize = document.getElementById("samplesize").value;
-            var newSEM = POP_SD / Math.sqrt(sampleSize);
-            SDM.updateSd(newSEM);
-        }
-    } */
+    
+    // Clear the graph when display type is changed.
+    $('input[name="displaytype"]').on('change', function(){
+        clearContainer("stats");
+        clearFromGraph(".sample");
+        clearFromGraph(".samplemean");
+    });
     
     /* --- jQUERY slider --- */
     $( "#slider" ).slider({
@@ -239,10 +240,11 @@ window.onload=(function(){
          },
          stop: function (event, ui){
             setSampleSize(ui.value, stop=true);
+            clearContainer("stats");
          }
     });
 
-    $( "#slider" ).slider({ max: 99 });
+    $( "#slider" ).slider({ max: 100 });
     $( "#slider" ).slider({ min: 10 });
     $( "#slider" ).slider({ step: 1 });
     $( "#slider" ).slider({ value: 10 });
