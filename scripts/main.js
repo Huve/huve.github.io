@@ -14,13 +14,14 @@ window.onload=(function(){
         POP_SD = 10;
         DEFAULT_SAMPLE_SIZE = 10; 
         
-        // Set initial parameter values.
-        setSampleSize(DEFAULT_SAMPLE_SIZE);
         // Create the histograms.
         graphDimensions = calculateGraphDimensions(window.innerWidth);
         svg = createGraph("graph", graphDimensions.width, graphDimensions.height);
         POPULATION = new histogram(svg, id="population", fill="steelblue", mean=POP_MEAN, sd=POP_SD, numBins=BINS);
         SDM = new histogram(svg, id="sem", fill="green", mean=POP_MEAN, sd=POP_SD/Math.sqrt(DEFAULT_SAMPLE_SIZE), numBins=BINS);
+        
+        // Set initial parameter values.
+        setSampleSize(DEFAULT_SAMPLE_SIZE);
         
         // Draw a sample when the sample button is clicked
         document.getElementById('sample').onclick = function() {
@@ -59,13 +60,13 @@ window.onload=(function(){
         var sampleSize = getSampleSize();
         if (newPopulation == "normal"){
             POP_SD = 10;
-            POPULATION.updateSd(POP_SD);
-            SDM.updateSd(POP_SD/Math.sqrt(sampleSize));
+            POPULATION.updateSd(POP_SD, getDistFunction());
+            SDM.updateSd(POP_SD/Math.sqrt(sampleSize), calculateNormalDistribution());
         }
-        else if (newPopulation == "normal2"){
-            POP_SD = 5;
-            POPULATION.updateSd(POP_SD);
-            SDM.updateSd(POP_SD/Math.sqrt(sampleSize));
+        else if (newPopulation == "uniform"){
+            POP_SD = 10;
+            POPULATION.updateSd(POP_SD, getDistFunction());
+            SDM.updateSd(POP_SD/Math.sqrt(sampleSize), calculateNormalDistribution());
         }
         else if (newPopulation == "normal3"){
             //POP_SD = 2;
@@ -218,11 +219,23 @@ window.onload=(function(){
       */
     function setSampleSize(sampleSize, stop=false){
         var sampleSizeHolder = document.getElementById("currentn");
+        var distFunction = getDistFunction();
         sampleSizeHolder.value = sampleSize;
         document.getElementById("samplesize").value = "N = " + sampleSize;
-       if(stop){
+        console.log(distFunction);
+       //if(stop == true){ TODO(): decide if stop matters
             var newSEM = POP_SD / Math.sqrt(sampleSize);
-            SDM.updateSd(newSEM);
+            SDM.updateSd(newSEM, distFunction);
+       // }
+    }
+    
+    function getDistFunction(){
+        var selectedDistribution = document.getElementById("distributiontype").value;
+        if (selectedDistribution == "normal"){
+            return calculateNormalDistribution;
+        }
+        else if (selectedDistribution == "uniform"){
+            return calculateUniformDistribution;
         }
     }
     
@@ -237,15 +250,16 @@ window.onload=(function(){
     $( "#slider" ).slider({
         slide: function( event, ui ) {
             setSampleSize(ui.value);
+            clearContainer("stats");
          },
          stop: function (event, ui){
-            setSampleSize(ui.value, stop=true);
-            clearContainer("stats");
+           setSampleSize(ui.value);
+           clearContainer("stats");
          }
     });
 
     $( "#slider" ).slider({ max: 100 });
-    $( "#slider" ).slider({ min: 10 });
+    $( "#slider" ).slider({ min: 1 });
     $( "#slider" ).slider({ step: 1 });
     $( "#slider" ).slider({ value: 10 });
     $("#samplesize").val("N = " + $( "#slider" ).slider("value"));

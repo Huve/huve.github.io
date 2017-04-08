@@ -115,12 +115,12 @@ function histogram(svg, id, fill, mean, sd, numBins){
     this.minBin = mean - (numBins / 2) * this.binValue;
     this.numBins = numBins;
     // Create the data for the histogram.
-    this.createData = function(firstDraw){
+    this.createData = function(firstDraw, distFunction){
         this.data = [];
         for (var i = 0; i < numBins; i++){
             var iValue = i * this.binValue + this.binValue + this.minBin;
             var x = i * this.barWidth;
-            var distValue = calculateNormalDistribution(this.mean, this.sd, iValue);
+            var distValue = distFunction(this.mean, this.sd, iValue);
             this.heights.push(distValue);
             var y = graphDimensions.height - distValue;
             var height = graphDimensions.height - y;
@@ -142,12 +142,12 @@ function histogram(svg, id, fill, mean, sd, numBins){
             }
         }   
     }
-    this.updateSd = function(sd){
+    this.updateSd = function(sd, distFunction){
         this.sd = sd;
-        this.createData();
+        this.createData(false, distFunction);
     }
     // add the data to the histogram.
-    this.createData(true);
+    this.createData(true, calculateNormalDistribution);
 
     // Verify similar area under curve
     /*var sum = this.heights.reduce((pv, cv) => pv+cv, 0); 

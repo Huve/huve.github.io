@@ -79,6 +79,11 @@ function calculateNormalDistribution(mean, sd, iValue){
     var height = fraction * eterm * (window.innerHeight);
     return height;
 }
+
+function calculateUniformDistribution(mean, sd, iValue){
+    var height = window.innerHeight / 10;
+    return height;
+}
     
      
 /**
