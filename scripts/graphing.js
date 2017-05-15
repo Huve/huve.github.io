@@ -51,10 +51,12 @@ function hideDistribution(distributionClass, graphHeight){
     for (b = 0; b < allBars[0].length; b ++){
         var thisBar = d3.select(allBars[0][b]);
         thisBar.transition()
-        .attr('y', graphHeight)
+        .attr('y', graphHeight + 1)
         .duration(500);
     }        
 }
+
+
 
 
 /** 
@@ -114,6 +116,7 @@ function histogram(svg, id, fill, mean, sd, numBins){
     this.binValue = (6 / numBins) * POP_SD; // .000005 * numBins; /*(6 / numBins) * sd;*/
     this.minBin = mean - (numBins / 2) * this.binValue;
     this.numBins = numBins;
+    this.hidden=false;
     // Create the data for the histogram.
     this.createData = function(firstDraw, distFunction){
         this.data = [];
@@ -130,7 +133,7 @@ function histogram(svg, id, fill, mean, sd, numBins){
                 this.bars.push(b);
                 b.draw(this.fill); 
             }
-            else{
+            else if (this.hidden == false){
                 var b = this.bars[i];
                 b.adjustY(y, height);
             }
@@ -143,6 +146,7 @@ function histogram(svg, id, fill, mean, sd, numBins){
         }   
     }
     this.updateSd = function(sd, distFunction){
+        console.log(typeof(distFunction));
         this.sd = sd;
         this.createData(false, distFunction);
     }

@@ -32,8 +32,14 @@
                 <input type="radio" name="displaytype" value="sample" class="radiocontrol" id="displaysample" checked /> <label for="displaysample">Sample</label> <br>
                 <input type="radio" name="displaytype" value="means" class="radiocontrol" id="displaymeans" /> <label for="displaymeans">Means</label>
             </div>
+            <div id="distributiondisplaycontainer">
+                <span class="controlheader"> Show Distribution: </span><br>
+                <input type="checkbox" name="displaydistribution" value="population" id="displaypopdistribution" checked> <label for="displaypopdistribution" id="poplabel">Population</label><br>
+                <input type="checkbox" name="displaydistribution" value="sample" id="displaysdmdistribution" checked> <label for="displaysdmdistribution" id="sdmlabel">SDM</label><br>
+              
+            </div>
             <input type="button" id="sample" value="Sample" />
             <div id="stats"></div>
         </div>
-    </body
+    </body>
 </html>

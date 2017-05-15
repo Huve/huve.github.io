@@ -18,16 +18,33 @@ select{
 
 .radiocontrol{
     position:relative;
-    float:left
-    width:80%;
+    float:left;
 }
 
 #controlcontainer{
     float:left;
     width:190px;
+    -moz-user-select:none;
+    user-select:none;
 }
 
 #displaycontainer{
+    top:15px;
+    position:relative;
+    width:100%;
+    float:left;
+}
+
+#sdmlabel{
+    color:green;
+}
+
+#poplabel{
+    color:steelblue;
+}
+
+
+#distributiondisplaycontainer{
     top:15px;
     position:relative;
     width:100%;

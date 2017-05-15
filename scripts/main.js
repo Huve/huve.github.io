@@ -18,7 +18,7 @@ window.onload=(function(){
         graphDimensions = calculateGraphDimensions(window.innerWidth);
         svg = createGraph("graph", graphDimensions.width, graphDimensions.height);
         POPULATION = new histogram(svg, id="population", fill="steelblue", mean=POP_MEAN, sd=POP_SD, numBins=BINS);
-        SDM = new histogram(svg, id="sem", fill="green", mean=POP_MEAN, sd=POP_SD/Math.sqrt(DEFAULT_SAMPLE_SIZE), numBins=BINS);
+        SDM = new histogram(svg, id="sdm", fill="green", mean=POP_MEAN, sd=POP_SD/Math.sqrt(DEFAULT_SAMPLE_SIZE), numBins=BINS);
         
         // Set initial parameter values.
         setSampleSize(DEFAULT_SAMPLE_SIZE);
@@ -49,6 +49,15 @@ window.onload=(function(){
         popDropDown.onchange = function(){
             changePopulation(this.value);
         }
+        
+        var populationDisplayCheck = document.getElementById("displaypopdistribution");
+        populationDisplayCheck.onchange = function(){
+            changeDistributionDisplay(this.checked, "histogrampopulation");
+        }
+        var sdmDisplayCheck = document.getElementById("displaysdmdistribution");
+        sdmDisplayCheck.onchange = function(){
+            changeDistributionDisplay(this.checked, "histogramsdm");
+        }
     }
     
     /**
@@ -66,7 +75,7 @@ window.onload=(function(){
         else if (newPopulation == "uniform"){
             POP_SD = 10;
             POPULATION.updateSd(POP_SD, getDistFunction());
-            SDM.updateSd(POP_SD/Math.sqrt(sampleSize), calculateNormalDistribution());
+            SDM.updateSd(POP_SD/Math.sqrt(getSampleSize()), calculateNormalDistribution());
         }
         else if (newPopulation == "normal3"){
             //POP_SD = 2;
@@ -134,6 +143,34 @@ window.onload=(function(){
         appendChildElement(meanText, container, "div");
         appendChildElement(sdText, container, "div");
     }
+    
+    /** Hides or displays the SDM or population.
+      *
+      * @param {boolean} isChecked Whether or not the associated checkbox is checked.
+      * @param {string} distributionName The classname of the distribution bars to be hidden or shown.
+      */
+    function changeDistributionDisplay(isChecked, distributionName){
+        if (isChecked === true){
+            if (distributionName == "histogrampopulation"){
+                POPULATION.hidden = false;
+                POPULATION.updateSd(POP_SD, getDistFunction());
+            }
+            else if (distributionName == "histogramsdm"){
+                SDM.hidden = false;
+                SDM.updateSd(POP_SD/Math.sqrt(getSampleSize()), calculateNormalDistribution);
+            }
+        }
+        else{
+            if (distributionName == "histogrampopulation"){
+                POPULATION.hidden = true;
+            }
+            else if (distributionName == "histogramsdm"){
+                SDM.hidden = true;
+            }
+            hideDistribution(distributionName, graphDimensions.height);
+        }
+    }
+   
         
         
     /**
@@ -222,11 +259,8 @@ window.onload=(function(){
         var distFunction = getDistFunction();
         sampleSizeHolder.value = sampleSize;
         document.getElementById("samplesize").value = "N = " + sampleSize;
-        console.log(distFunction);
-       //if(stop == true){ TODO(): decide if stop matters
             var newSEM = POP_SD / Math.sqrt(sampleSize);
             SDM.updateSd(newSEM, distFunction);
-       // }
     }
     
     function getDistFunction(){
