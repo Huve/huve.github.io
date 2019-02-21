@@ -1,5 +1,6 @@
 // This file contains graping functions, particularly for d3.
 // Alphabetically ordered.
+// WORK IN PROGRESS
 
 
 /**
@@ -41,6 +42,16 @@ function bar(c, x, y, w, h, svg){
     return this;
 }
 
+/** Displays text on a graph */
+function displayText(g, t, x, y){
+	g.selectAll("text").remove()
+	g.append("text")
+    .attr("x", x)
+    .attr("y", y)
+    .text(function(d) { return t });
+}
+
+
 /**
   * Hides a distribution.
   * @param {string} distributionClass The classname of the bars in the distribution.
@@ -55,8 +66,6 @@ function hideDistribution(distributionClass, graphHeight){
         .duration(500);
     }        
 }
-
-
 
 
 /** 
@@ -92,6 +101,128 @@ function getBins(histogram, data){
     return allBins;  
 }
 
+/**
+  * Computes the numerical bin width for a histogram.
+  *
+  * @param {integer} numBins The number of bins in a histogram.
+  * @param {numeric} sd The standard deviation of the distribution.
+  * @param {integer} numSds The number of sds the histogram should represent.
+  * @return {numeric} The numerical width of each bin in a histogram.
+  */
+function computeBinWidth(numBins, sd, numSds){
+	var binVal = (numSds / numBins) * sd;
+	return (binVal);
+}
+
+/** 
+  * Computes the minimum bin value for a histogram.
+  *
+  * @param {integer} numBins The number of bins in a histogram.
+  * @param {numeric} The mean of the distribution.
+  * @param {numeric} The width of the bins in the histogram.
+  * @return {numeric} The lowest value in the histogram.
+  */
+function computeMinBin(numBins, mean, binWidth){
+    var minBin = mean - (numBins / 2) * binWidth;
+	return(minBin);
+}
+
+
+/**
+  * Maps bin lower and upper values to a bin index.
+  *
+  * @param {histogram} The histogram to be binned.
+  * @param {array} Array of bins to be mapped to.
+  * @return {array} Two-dimensional array of lower and upper values.
+  */
+function createBinMap(histogram, animatedBins, modifier=1){
+	var binMap = new Array(animatedBins.length).fill(0);
+	for (var i = 0; i < animatedBins.length; i++){
+		var map = []
+		var minVal = histogram.minBin + (i * histogram.binValue * modifier);
+		var maxVal = minVal + (histogram.binValue * modifier);
+		map[0] = minVal;
+		map[1] = maxVal;
+		binMap[i] = map;
+	}
+	return(binMap);
+}
+
+
+/** 
+  * Initalizes animation bins based on histogram bins.
+  *
+  * @param {object} histogram The histogram with which the bins will be used.
+  * @return {array} animationBins an array of 0 of size based on number of bins in histogram.
+  */
+function initalizeAnimationBins(histogram, modifier=1){
+	var animationBins = new Array(histogram.numBins / modifier).fill(0);
+	return(animationBins);
+}
+
+
+/**
+  * Puts a point in its bin
+  * TODO
+  */
+function processAnimatedBin(bins, map, value){
+	var binInfo = {
+            index: null,
+            lower: null,
+            val: value
+    }
+	for (var i = 0; i < bins.length; i++){
+		var lower = map[i][0];
+		var upper = map[i][1];
+		if (lower > value || upper < value){
+			// do nothing because out of bin range.
+		}
+		else if (lower < value && upper > value){
+			bins[i] = bins[i] + 1;
+			binInfo.index = i;
+			binInfo.val = bins[i];
+			binInfo.lower = map[i][0];
+			return(binInfo);
+		}
+		else if (Math.abs(value - upper) < .01){
+			// skip this and default to lower bin val next iteration
+		}
+		else if (Math.abs(value - lower) < .01){
+			bins[i] = bins[i] + 1;
+			binInfo.index = i;
+			binInfo.val = bins[i];
+			binInfo.lower = map[i][0];
+			return(binInfo);
+		}
+		else{
+			// this is an error
+			console.log("Binning error for: " + value);
+			return(null);
+		}
+	}
+}
+
+
+/**
+  * Animated mean bar
+  */
+function animatedMeanBlock(svg, id, fill, dims, thisBin, maxHeight){
+	var barHeight = 10;
+	var yfinal = maxHeight - (thisBin - 1) * barHeight;
+	console.log(yfinal);
+	var meanBlock = svg.append('rect')
+	.attr('x', dims.x)
+	.attr('y', 0)
+	.attr('fill', fill)
+	.attr('width', 9)
+	.attr('height', barHeight)
+	.attr('class', 'animatedMean')
+	.attr('id', id + 'meanBlock');
+	
+	meanBlock.transition()
+	.attr('y', yfinal-10);
+}
+
     
 /**
   * Creates a histogram of a distribution.
@@ -104,17 +235,20 @@ function getBins(histogram, data){
   * @return {object} this The this histogram.
   */
 function histogram(svg, id, fill, mean, sd, numBins){
+    /* histogram for graphs on the WISE site */
+    /* TODO (finish doc) */
     this.id = id;
     this.fill = fill;
     this.mean = mean;
     this.sd = sd;
+	this.text = mean + " " + sd
     this.binValue = 0; 
     this.bars = [];
     this.heights = [];
     this.data = [];
     this.barWidth = graphDimensions.width / numBins;
-    this.binValue = (6 / numBins) * POP_SD; // .000005 * numBins; /*(6 / numBins) * sd;*/
-    this.minBin = mean - (numBins / 2) * this.binValue;
+	this.binValue = computeBinWidth(numBins, POP_SD, 6);
+	this.minBin = computeMinBin(numBins, mean, this.binValue);
     this.numBins = numBins;
     this.hidden=false;
     // Create the data for the histogram.
@@ -146,10 +280,10 @@ function histogram(svg, id, fill, mean, sd, numBins){
         }   
     }
     this.updateSd = function(sd, distFunction){
-        console.log(typeof(distFunction));
         this.sd = sd;
         this.createData(false, distFunction);
     }
+	
     // add the data to the histogram.
     this.createData(true, calculateNormalDistribution);
 
