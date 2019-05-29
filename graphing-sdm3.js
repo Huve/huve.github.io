@@ -202,19 +202,28 @@ function processAnimatedBin(bins, map, value){
 	}
 }
 
+/** Safely determines bin limits as multiple of bin pixel width.
+  */
+function safeBinLimits(val, binWidth){
+	var remainder = val % binWidth;
+	var safeBin = val - remainder;
+	return(safeBin);
+}
 
 /**
   * Animated mean bar
   */
-function animatedMeanBlock(svg, id, fill, dims, thisBin, maxHeight){
+function animatedMeanBlock(svg, id, fill, dims, thisBin, graphDims, total_bins){
 	var barHeight = 10;
-	var yfinal = maxHeight - (thisBin - 1) * barHeight;
-	console.log(yfinal);
+	var yfinal = graphDims.height - (thisBin - 1) * barHeight;
+	var widthFinal = graphDims.width / total_bins;
+	var xFinal = safeBinLimits(dims.x, widthFinal);
+	console.log(xFinal, widthFinal, xFinal % widthFinal);
 	var meanBlock = svg.append('rect')
-	.attr('x', dims.x)
+	.attr('x', Math.round(dims.x))
 	.attr('y', 0)
 	.attr('fill', fill)
-	.attr('width', 9)
+	.attr('width', widthFinal + 1)
 	.attr('height', barHeight)
 	.attr('class', 'animatedMean')
 	.attr('id', id + 'meanBlock');

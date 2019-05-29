@@ -229,7 +229,7 @@ window.onload=(function(){
     sampleButton.onclick = function() {
 		var displayType = document.querySelector('input[name="displaytype"]:checked').value;
 		n = getSampleSize();   
-		if (n > 100){ alert("Please enter an integer between 1 and 101 as a sample size"); }
+		if (n > 100 | n < 2){ alert("Please enter an integer between 1 and 101 as a sample size"); }
 		else {
 			var sample = sampleData(POPULATION.data, n);
 			var sampleMean = roundNumber(calculateAverage(sample), 2);
@@ -241,7 +241,7 @@ window.onload=(function(){
 				var binInfo = processAnimatedBin(SAMPLE_MEAN_BINS, SAMPLE_MEAN_MAP, sampleMean);
 				var magnitude = Math.floor((binInfo.lower - POPULATION.minBin) / POPULATION.binValue);
 				var dimensions = getPointDimensions(1, magnitude);
-				animatedMeanBlock(SDM_SVG, 'none', 'red', dimensions, binInfo.val, graphDimensions.height);
+				animatedMeanBlock(SDM_SVG, 'none', 'red', dimensions, binInfo.val, graphDimensions, SAMPLE_MEAN_BINS.length);
 			}
 			else{
 				drawSampleMean(POP_SVG, sampleMean);
@@ -250,6 +250,34 @@ window.onload=(function(){
 		}
 	
     };
+	
+	function resetData(){
+		SAMPLE_MEAN_BINS = initalizeAnimationBins(SDM, MODIFIER);
+		SAMPLE_MEAN_MAP = createBinMap(SDM, SAMPLE_MEAN_BINS, MODIFIER);
+	}
+	
+	// Reset controls
+	function resetControls(){
+	}
+	
+	function resetGraphs(){
+		clearFromGraph(".sample");
+		clearFromGraph(".animatedMean");
+		updatePopText();
+	}
+	
+	// Reset the entire graph.
+	function resetAll(){
+		resetControls();
+		resetData();
+		resetGraphs();
+	}
+
+
+	var resetButton = document.getElementById("reset");
+	resetButton.onclick = function(){
+		resetAll();
+	}
 	
 	// SAMPLE SIZE BOX (#samplesize)
 	var sampleSizeInput = document.getElementById("samplesize");
@@ -349,7 +377,7 @@ window.onload=(function(){
 		sdmCheckbox.checked = false;
 		changeDistributionDisplay(false, "histogramsdm");
 	}
-
+	
     __init__();
 
 
