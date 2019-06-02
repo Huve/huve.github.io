@@ -114,9 +114,9 @@ window.onload=(function(){
         var meanText = "Sample mean: " +  sampleMean;
         var sdText = "Sample SD: " + sampleSD;
         var container = document.getElementById("stats");
-        clearContainer("stats");
-        appendChildElement(meanText, container, "div");
-        appendChildElement(sdText, container, "div");
+       // clearContainer("stats");
+       // appendChildElement(meanText, container, "div");
+       // appendChildElement(sdText, container, "div");
 		updateSampleText(sampleMean, sampleSD);
     }
     
@@ -130,19 +130,50 @@ window.onload=(function(){
       * @param {string} color The color to draw the histogram.
       * @return draws the histogram on the svg.
       */
-    function drawSampleData(svg, sampleBins, color="black"){
+    function drawSampleData(svg, sampleBins, color="#ff8c00"){
       clearFromGraph(".sample");
       var binnedSample = getBins(POPULATION, sampleBins);
       for (var i = 0; i < binnedSample.length; i++){
           var dimensions = getPointDimensions(binnedSample[i], i);
           try{
-            var b = new bar("sample", dimensions.x, dimensions.y, dimensions.width, dimensions.height, svg);
+		    var widthFinal = Math.ceil(graphDimensions.width / SAMPLE_MEAN_BINS.length);
+			var xFinal = safeBinLimits(dimensions.x, widthFinal);
+            var b = new bar("sample", xFinal, dimensions.y, widthFinal, dimensions.height, svg);
             b.draw(color, opacity=1);
           }
           catch(e){ };
       }
     }
         
+	/**
+	  * Locks the sample button once the means are stacked too high.
+	  *
+	  */
+	function lockButton(buttonId){
+		document.getElementById(buttonId).disabled = true;
+	}
+	
+    /**
+	  * Unlocks the sample button once the means are stacked too high.
+	  *
+	  */
+	function unlockButton(buttonId){
+		document.getElementById(buttonId).disabled = false;
+	}
+	
+	/**
+	  * Checks if the SDM graph needs to be locked.
+	  *
+	  */
+	function checkSDMHeight(vals, max){
+		for (var i = 0; i < vals.length; i++){
+			if (vals[i] > max){
+				lockButton("sample");
+			}
+			else{
+			}
+		}
+	}
             
     /**
       * Draws the sample mean on the graph.
@@ -228,28 +259,66 @@ window.onload=(function(){
     var sampleButton = document.getElementById("sample");
     sampleButton.onclick = function() {
 		var displayType = document.querySelector('input[name="displaytype"]:checked').value;
-		n = getSampleSize();   
-		if (n > 100 | n < 2){ alert("Please enter an integer between 1 and 101 as a sample size"); }
-		else {
-			var sample = sampleData(POPULATION.data, n);
-			var sampleMean = roundNumber(calculateAverage(sample), 2);
-			var sampleSD = roundNumber(calculateStandardDev(sample), 2);
-			if (displayType == "sample"){
-				
-				drawSampleData(POP_SVG, sample); 
-				//drawSampleMean(SDM_SVG, sampleMean);
-				var binInfo = processAnimatedBin(SAMPLE_MEAN_BINS, SAMPLE_MEAN_MAP, sampleMean);
-				var magnitude = Math.floor((binInfo.lower - POPULATION.minBin) / POPULATION.binValue);
-				var dimensions = getPointDimensions(1, magnitude);
-				animatedMeanBlock(SDM_SVG, 'none', 'red', dimensions, binInfo.val, graphDimensions, SAMPLE_MEAN_BINS.length);
-			}
-			else{
-				drawSampleMean(POP_SVG, sampleMean);
-			}
-			displaySampleStats(sampleMean, sampleSD);
+		var numSamples = document.querySelector('input[name="samplenumber"]:checked').value;
+		var barHeight = 10/parseFloat(numSamples);
+		var maxNumBars = graphDimensions.height / barHeight;
+		checkSDMHeight(SAMPLE_MEAN_BINS, maxNumBars)
+		var n = getSampleSize();   
+		if (n > 100 | n < 2){ 
+			alert("Please enter an integer between 1 and 101 as a sample size");
+			return;
 		}
-	
+		if (displayType == "means" & numSamples == "1"){
+			var sampleStats = sampleOnce(n, animate=true, display=false)
+			drawSampleMean(POP_SVG, sampleStats[0]);
+			displaySampleStats(sampleStats[0], sampleStats[0]);
+		}
+		else if (displayType == "means" & numSamples == "25"){
+			sampleMany(n, 1000, 25);
+		}
+		else if (displayType == "sample" & numSamples == "1"){
+			var sampleStats = sampleOnce(n);
+			displaySampleStats(sampleStats[0], sampleStats[0]);
+		}
+		else if (displayType == "sample" & numSamples == "25"){
+			sampleMany(n, 1000, 25);
+		}
+		else{
+			console.log("Sample display type is not set or number of samples is out of range");
+		}
     };
+	
+	/**
+	  * Sample one time from the population.
+	  *
+	  */
+	function sampleOnce(n, animate=true, display=true, hAdjust=1){
+		var sample = sampleData(POPULATION.data, n);
+		var sampleMean = roundNumber(calculateAverage(sample), 2);
+		var sampleSD = roundNumber(calculateStandardDev(sample), 2);
+		var binInfo = processAnimatedBin(SAMPLE_MEAN_BINS, SAMPLE_MEAN_MAP, sampleMean);
+		var magnitude = Math.floor((binInfo.lower - POPULATION.minBin) / POPULATION.binValue);
+		var dimensions = getPointDimensions(1, magnitude);
+		if (display == true){
+			drawSampleData(POP_SVG, sample);
+		}
+		if (animate == true){
+			animatedMeanBlock(SDM_SVG, 'none', 'red', dimensions, 
+			binInfo.val, graphDimensions, SAMPLE_MEAN_BINS.length, hAdjust);
+		}
+		return([sampleMean, sampleSD]);
+	}
+	
+	/** Draws many samples at one time
+	  *
+      * @param {int} the size of each sample.
+      * @param {int} the number of samples to draw.
+	  */
+	function sampleMany(n, r, hAdjust){
+		for (var i = 0; i < r; i++){
+			sampleOnce(n, true, false, hAdjust);
+		}
+	}
 	
 	function resetData(){
 		SAMPLE_MEAN_BINS = initalizeAnimationBins(SDM, MODIFIER);
@@ -263,6 +332,7 @@ window.onload=(function(){
 	function resetGraphs(){
 		clearFromGraph(".sample");
 		clearFromGraph(".animatedMean");
+		unlockButton("sample");
 		updatePopText();
 	}
 	
@@ -279,6 +349,18 @@ window.onload=(function(){
 		resetAll();
 	}
 	
+	
+	/**
+	  * Onchange for number of samples, reset the graph.
+	  */
+	var numSamplesButton = document.getElementsByName('samplenumber');
+	for (var i = 0; i < numSamplesButton.length; i++){
+		numSamplesButton[i].onchange = function(){
+			resetAll();
+		}
+	}
+
+	
 	// SAMPLE SIZE BOX (#samplesize)
 	var sampleSizeInput = document.getElementById("samplesize");
 	var validateInteger = function(i){
@@ -289,7 +371,7 @@ window.onload=(function(){
 		if (e.keyCode == 13){
 			var sampleSize = sampleSizeInput.value;
 			if (validateInteger(sampleSize)){
-				setSampleSize(sampleSize)
+				setSampleSize(sampleSize);
 			}
 			else{
 				alert("Please enter an integer between 1 and 101 as a sample size");
@@ -297,20 +379,30 @@ window.onload=(function(){
 		}
 	});
 	
+	sampleSizeInput.onblur = function(){
+		var sampleSize = sampleSizeInput.value;
+		if (validateInteger(sampleSize)){
+			setSampleSize(sampleSize);
+		}
+		else{
+			alert("Please enter an integer between 1 and 101 as a sample size");
+		}
+	};
+	
 	/** Updates the population parameter text. **/
 	function updatePopText(){
 		var selectedDistribution = document.getElementById("distributiontype").value;
 		if (selectedDistribution == "uniform"){
-			displayText(POP_SVG, "Population parameters: mean = " + POP_MEAN, 20, 30);
+			displayText(POP_SVG, "Population parameters: mean = " + POP_MEAN, 20, 30, "steelblue");
 		}
 		else{
-			displayText(POP_SVG, "Population parameters: mean = " + POP_MEAN + " sd = " + POP_SD, 20, 30);
+			displayText(POP_SVG, "Population parameters: mean = " + POP_MEAN + " sd = " + POP_SD, 20, 30, "steelblue");
 		}
 	}
 	
 		/** Updates the population parameter text. **/
 	function updateSampleText(m, sd){
-		displayText(SDM_SVG, "Sample statistics: mean = " + m + " sd = " + sd, 20, 30);
+		displayText(SDM_SVG, "Sample statistics: mean = " + m + " sd = " + sd, 20, 30, "#ff8c00");
 	}
 	
 	// DISTRIBUTION OPTIONS
