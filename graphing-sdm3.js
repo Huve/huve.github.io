@@ -136,15 +136,28 @@ function computeMinBin(numBins, mean, binWidth){
   * @param {array} Array of bins to be mapped to.
   * @return {array} Two-dimensional array of lower and upper values.
   */
-function createBinMap(histogram, animatedBins, modifier=1){
+function createBinMap(histogram, animatedBins, modifier=1, dist="other"){
 	var binMap = new Array(animatedBins.length).fill(0);
-	for (var i = 0; i < animatedBins.length; i++){
-		var map = []
-		var minVal = histogram.minBin + (i * histogram.binValue * modifier);
-		var maxVal = minVal + (histogram.binValue * modifier);
-		map[0] = minVal;
-		map[1] = maxVal;
-		binMap[i] = map;
+	if (dist == "binomial"){
+		for (var i = 0; i < animatedBins.length; i++){
+			var map = []
+			var binVal = 1.1 	 / histogram.numBins;
+			var minVal = 0 + (i * binVal * modifier);
+			var maxVal = minVal + (binVal * modifier);
+			map[0] = parseFloat(minVal.toFixed(5));
+			map[1] = parseFloat(maxVal.toFixed(5));
+			binMap[i] = map;
+		}
+	}
+	else{
+		for (var i = 0; i < animatedBins.length; i++){
+			var map = []
+			var minVal = histogram.minBin + (i * histogram.binValue * modifier);
+			var maxVal = minVal + (histogram.binValue * modifier);
+			map[0] = minVal;
+			map[1] = maxVal;
+			binMap[i] = map;
+		}
 	}
 	return(binMap);
 }
@@ -166,7 +179,8 @@ function initalizeAnimationBins(histogram, modifier=1){
   * Puts a point in its bin
   * TODO
   */
-function processAnimatedBin(bins, map, value){
+function processAnimatedBin(bins, map, value, dist){
+	var value = parseFloat(value.toFixed(5));
 	var binInfo = {
             index: null,
             lower: null,
@@ -185,7 +199,15 @@ function processAnimatedBin(bins, map, value){
 			binInfo.lower = map[i][0];
 			return(binInfo);
 		}
+		else if (Math.abs(value - lower == 0)){
+			bins[i] = bins[i] + 1;
+			binInfo.index = i;
+			binInfo.val = bins[i];
+			binInfo.lower = map[i][0];
+			return(binInfo);
+		}
 		else if (Math.abs(value - upper) < .01){
+			console.log('problem with ' + value + " " + upper);
 			// skip this and default to lower bin val next iteration
 		}
 		else if (Math.abs(value - lower) < .01){
@@ -207,7 +229,7 @@ function processAnimatedBin(bins, map, value){
 
 /** Safely determines bin limits as multiple of bin pixel width.
   */
-function safeBinLimits(numToRound, multiple){
+function safeBinLimits(numToRound, multiple, binomial=false){
 	var remainder = numToRound % multiple;
 	if (multiple == 0)
 		var adjusted = numToRound;
@@ -223,11 +245,19 @@ function safeBinLimits(numToRound, multiple){
 /**
   * Animated mean bar
   */
-function animatedMeanBlock(svg, id, fill, dims, thisBin, graphDims, total_bins, hAdjust){
+function animatedMeanBlock(svg, id, fill, dims, thisBin, graphDims, total_bins, hAdjust, binomial=false, binIndex=null){
 	var barHeight = 10/hAdjust;
 	var yfinal = graphDims.height - (thisBin - 1) * barHeight;
 	var widthFinal = Math.ceil(graphDims.width / total_bins);
-	var xFinal = safeBinLimits(dims.x, widthFinal);
+	if(binomial == true){
+		var xFinal = binIndex * widthFinal;
+	}
+	else {
+		var xFinal = safeBinLimits(dims.x, widthFinal);
+	}
+	var barHeight = 10/hAdjust;
+	var yfinal = graphDims.height - (thisBin - 1) * barHeight;
+	var widthFinal = Math.ceil(graphDims.width / total_bins);
 	var meanBlock = svg.append('rect')
 	.attr('x', Math.round(xFinal))
 	.attr('y', 0)
@@ -260,19 +290,21 @@ function histogram(svg, id, fill, mean, sd, numBins){
     this.mean = mean;
     this.sd = sd;
 	this.text = mean + " " + sd
-    this.binValue = 0; 
+    
     this.bars = [];
+	this.binomial_bars = [];
+	this.binomial_heights = [];
     this.heights = [];
     this.data = [];
-    this.barWidth = graphDimensions.width / numBins;
-	this.binValue = computeBinWidth(numBins, POP_SD, 6);
-	this.minBin = computeMinBin(numBins, mean, this.binValue);
-    this.numBins = numBins;
+	this.numBins = numBins;
+    this.barWidth = graphDimensions.width / this.numBins;
+	this.binValue = computeBinWidth(this.numBins, POP_SD, 6);
+	this.minBin = computeMinBin(this.numBins, this.mean, this.binValue);
     this.hidden=false;
     // Create the data for the histogram.
     this.createData = function(firstDraw, distFunction){
         this.data = [];
-        for (var i = 0; i < numBins; i++){
+        for (var i = 0; i < this.numBins; i++){
             var iValue = i * this.binValue + this.binValue + this.minBin;
             var x = i * this.barWidth;
             var distValue = distFunction(this.mean, this.sd, iValue);
@@ -297,17 +329,67 @@ function histogram(svg, id, fill, mean, sd, numBins){
             }
         }   
     }
-    this.updateSd = function(sd, distFunction){
-        this.sd = sd;
-        this.createData(false, distFunction);
+
+	// Resets the graph.
+	this.resetGraph = function(){
+		for (var i = 0; i < this.bars.length; i++){
+			var b = this.bars[i];
+			b.adjustY(graphDimensions.height, 0);
+		}
+		for (var i = 0; i < this.binomial_bars.length; i++){
+			var b = this.binomial_bars[i];
+			b.adjustY(graphDimensions.height, 0);
+		}
+		this.heights = [];
+	    this.binomial_heights = [];
+		this.data = [];
+	}
+	
+    this.update = function(mean, sd, numBins, distFunction, binomial=false){
+		this.resetGraph();
+		this.mean = mean;
+		this.sd = sd;
+		this.numBins =  numBins;
+		this.barWidth = graphDimensions.width / this.numBins;
+		this.minBin = computeMinBin(this.numBins, this.mean, this.binValue);
+		if (binomial == false){
+			this.createData(false, distFunction);
+		}
+		else{
+			this.binomialTransform(false, distFunction);
+		}
     }
+	// Transforms the graph to better display binomial distribution.
+	this.binomialTransform = function(p, sd){
+		this.resetGraph();
+		this.mean = p;
+		this.numBins = 10;
+		this.barWidth = graphDimensions.width / this.numBins;
+		this.binomBinValue = .1;
+		this.minBin = 0;
+		for (var i = 0; i < this.numBins; i++){
+			var iValue = i * this.binomBinValue * 2 + this.minBin;
+		    var x = i * this.barWidth;
+            var distValue = calculateBinomialDistribution(this.mean, this.sd, iValue);
+            this.binomial_heights.push(distValue);
+            var y = graphDimensions.height - distValue;
+            var height = graphDimensions.height - y;
+			var b = new bar("histogram" + this.id, x, y, this.barWidth, height, svg);
+            this.binomial_bars.push(b);
+            b.draw(this.fill); 
+			var binData = createDataFromDistribution(distValue, iValue, this.binValue, binomial=true);
+                for (n = 0; n < binData.length; n++) {
+                    this.data.push(binData[n]);
+                }
+		}
+	}
 	
     // add the data to the histogram.
     this.createData(true, calculateNormalDistribution);
 
     // Verify similar area under curve
-    /*var sum = this.heights.reduce((pv, cv) => pv+cv, 0); 
-    console.log(sum);*/
+		//var sum = this.heights.reduce((pv, cv) => pv+cv, 0); 
+		//console.log(sum);
     return this;
 }
 

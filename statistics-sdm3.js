@@ -49,16 +49,27 @@ function calculateStandardDev(data){
   * @param {float} binSize The width of the bin.
   * @return {array} data A uniformly sampled random set of data from the bin.
   */
-function createDataFromDistribution(n, minBinValue, binSize){
+function createDataFromDistribution(n, minBinValue, binSize, binomial=false){
     var data = [];
-    if (n < .5) { return data; }
-    else if (n < 1){
-        var n = 1;
-    }
-    for(var s = 0; s < n; s++){
-        data.push(Math.random() * binSize + minBinValue);
-    }
-    return data; 
+	if (binomial == false){
+		if (n < .5) { return data; }
+		else if (n < 1){
+			var n = 1;
+		}
+		for(var s = 0; s < n; s++){
+			data.push(Math.random() * binSize + minBinValue);
+		}
+		return data; 
+	}
+	else{
+		if (n < .5){
+			return data;
+		}
+		for(var s = 0; s < n; s++){
+			data.push(1 * minBinValue);
+		}
+		return data;
+	}
 }
    
    
@@ -83,6 +94,19 @@ function calculateNormalDistribution(mean, sd, iValue){
 function calculateUniformDistribution(mean, sd, iValue){
     var height = window.innerHeight / 10;
     return height;
+}
+
+function calculateBinomialDistribution(p, sd, iValue){
+    var maxHeight = window.innerHeight/6;
+	if(iValue == 0){
+		return(maxHeight - (maxHeight * .10));
+	}
+	else if (iValue == 1){
+		return(maxHeight - (maxHeight * .90));
+	}
+	else{
+		return 0;
+	}
 }
     
      

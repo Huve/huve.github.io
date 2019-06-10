@@ -43,22 +43,31 @@ window.onload=(function(){
         var sampleSize = getSampleSize();
 		var dist = getDistFunction();
         if (newPopulation == "normal"){
+			POP_MEAN = 100;
             POP_SD = 10;
-            POPULATION.updateSd(POP_SD, dist);
-            SDM.updateSd(POP_SD/Math.sqrt(sampleSize), dist);
+            POPULATION.update(POP_MEAN, POP_SD, BINS, dist);
+            SDM.update(POP_MEAN, POP_SD/Math.sqrt(sampleSize), BINS, dist);
         }
         else if (newPopulation == "uniform"){
-            POP_SD = 10;
-            POPULATION.updateSd(POP_SD, dist);
+			POP_MEAN = 100;
+			POP_SD = 10;
+            POPULATION.update(POP_MEAN, POP_SD, BINS, dist);
             lockSDM();
         }
         else if (newPopulation == "normal3"){
+			POP_MEAN = 100;
             POP_SD = 2;
-            POPULATION.updateSd(POP_SD, dist);
-            SDM.updateSd(POP_SD/Math.sqrt(sampleSize), dist);
+            POPULATION.update(POP_MEAN, POP_SD, BINS, dist);
+            SDM.update(POP_MEAN, POP_SD/Math.sqrt(sampleSize), BINS, dist);
         }
+		else if (newPopulation == "binomial"){
+			POP_MEAN = 0.10;
+			POP_SD = 0.30;
+			lockSDM();
+			POPULATION.binomialTransform(POP_MEAN);
+		}
 		updatePopText();
-        POPULATION.createData(false, dist);
+        //POPULATION.createData(false, dist);
     }
     
     /**
@@ -240,7 +249,7 @@ window.onload=(function(){
         sampleSizeHolder.value = sampleSize;
         document.getElementById("samplesize").value = sampleSize;
             var newSEM = POP_SD / Math.sqrt(sampleSize);
-            SDM.updateSd(newSEM, distFunction);
+            SDM.update(POP_MEAN, newSEM, BINS, distFunction);
     }
     
     function getDistFunction(){
@@ -251,6 +260,9 @@ window.onload=(function(){
         else if (selectedDistribution == "uniform"){
             return calculateUniformDistribution;
         }
+		else if (selectedDistribution == "binomial"){
+			return calculateBinomialDistribution;
+		}
     }
     
     // UI
@@ -260,28 +272,29 @@ window.onload=(function(){
     sampleButton.onclick = function() {
 		var displayType = document.querySelector('input[name="displaytype"]:checked').value;
 		var numSamples = document.querySelector('input[name="samplenumber"]:checked').value;
+		var distType = document.getElementById("distributiontype").value;
 		var barHeight = 10/parseFloat(numSamples);
 		var maxNumBars = graphDimensions.height / barHeight;
-		checkSDMHeight(SAMPLE_MEAN_BINS, maxNumBars)
+		checkSDMHeight(SAMPLE_MEAN_BINS, maxNumBars);
 		var n = getSampleSize();   
 		if (n > 100 | n < 2){ 
 			alert("Please enter an integer between 1 and 101 as a sample size");
 			return;
 		}
 		if (displayType == "means" & numSamples == "1"){
-			var sampleStats = sampleOnce(n, animate=true, display=false)
+			var sampleStats = sampleOnce(n, animate=true, display=false, dist=distType)
 			drawSampleMean(POP_SVG, sampleStats[0]);
 			displaySampleStats(sampleStats[0], sampleStats[0]);
 		}
 		else if (displayType == "means" & numSamples == "25"){
-			sampleMany(n, 1000, 25);
+			sampleMany(n, 10000, 60, distType);
 		}
 		else if (displayType == "sample" & numSamples == "1"){
-			var sampleStats = sampleOnce(n);
+			var sampleStats = sampleOnce(n, animate=true, display=true, hAdjust=1, dist=distType);
 			displaySampleStats(sampleStats[0], sampleStats[0]);
 		}
 		else if (displayType == "sample" & numSamples == "25"){
-			sampleMany(n, 1000, 25);
+			sampleMany(n, 10000, 60, distType);
 		}
 		else{
 			console.log("Sample display type is not set or number of samples is out of range");
@@ -292,19 +305,25 @@ window.onload=(function(){
 	  * Sample one time from the population.
 	  *
 	  */
-	function sampleOnce(n, animate=true, display=true, hAdjust=1){
+	function sampleOnce(n, animate=true, display=true, hAdjust=1, dist="other"){
 		var sample = sampleData(POPULATION.data, n);
 		var sampleMean = roundNumber(calculateAverage(sample), 2);
+	
 		var sampleSD = roundNumber(calculateStandardDev(sample), 2);
-		var binInfo = processAnimatedBin(SAMPLE_MEAN_BINS, SAMPLE_MEAN_MAP, sampleMean);
+		var binInfo = processAnimatedBin(SAMPLE_MEAN_BINS, SAMPLE_MEAN_MAP, sampleMean, dist);
 		var magnitude = Math.floor((binInfo.lower - POPULATION.minBin) / POPULATION.binValue);
 		var dimensions = getPointDimensions(1, magnitude);
 		if (display == true){
 			drawSampleData(POP_SVG, sample);
 		}
-		if (animate == true){
+		if (animate == true & dist != "binomial"){
 			animatedMeanBlock(SDM_SVG, 'none', 'red', dimensions, 
-			binInfo.val, graphDimensions, SAMPLE_MEAN_BINS.length, hAdjust);
+				binInfo.val, graphDimensions, SAMPLE_MEAN_BINS.length, hAdjust);
+		}
+		else if (animate == true & dist == "binomial"){
+			animatedMeanBlock(SDM_SVG, 'none', 'red', dimensions, 
+				binInfo.val, graphDimensions, SAMPLE_MEAN_BINS.length, hAdjust, 
+				binomial=true, binInfo.index);
 		}
 		return([sampleMean, sampleSD]);
 	}
@@ -314,15 +333,20 @@ window.onload=(function(){
       * @param {int} the size of each sample.
       * @param {int} the number of samples to draw.
 	  */
-	function sampleMany(n, r, hAdjust){
+	function sampleMany(n, r, hAdjust, dist){
 		for (var i = 0; i < r; i++){
-			sampleOnce(n, true, false, hAdjust);
+			sampleOnce(n, true, false, hAdjust, dist);
 		}
 	}
 	
-	function resetData(){
+	function resetData(dist=false){
 		SAMPLE_MEAN_BINS = initalizeAnimationBins(SDM, MODIFIER);
-		SAMPLE_MEAN_MAP = createBinMap(SDM, SAMPLE_MEAN_BINS, MODIFIER);
+		if(dist == "binomial"){
+			SAMPLE_MEAN_MAP = createBinMap(SDM, SAMPLE_MEAN_BINS, MODIFIER, dist);
+		}
+		else{
+			SAMPLE_MEAN_MAP = createBinMap(SDM, SAMPLE_MEAN_BINS, MODIFIER);
+		}
 	}
 	
 	// Reset controls
@@ -332,14 +356,16 @@ window.onload=(function(){
 	function resetGraphs(){
 		clearFromGraph(".sample");
 		clearFromGraph(".animatedMean");
+		SDM_SVG.selectAll("text").remove();
 		unlockButton("sample");
 		updatePopText();
 	}
 	
 	// Reset the entire graph.
 	function resetAll(){
+		var selectedDistribution = document.getElementById("distributiontype").value;
 		resetControls();
-		resetData();
+		resetData(selectedDistribution);
 		resetGraphs();
 	}
 
@@ -395,6 +421,9 @@ window.onload=(function(){
 		if (selectedDistribution == "uniform"){
 			displayText(POP_SVG, "Population parameters: mean = " + POP_MEAN, 20, 30, "steelblue");
 		}
+		else if (selectedDistribution == "binomial"){
+			displayText(POP_SVG, "Population parameters: p = " + POP_MEAN, 20, 30, "steelblue");
+		}
 		else{
 			displayText(POP_SVG, "Population parameters: mean = " + POP_MEAN + " sd = " + POP_SD, 20, 30, "steelblue");
 		}
@@ -416,11 +445,11 @@ window.onload=(function(){
         if (isChecked === true){
             if (distributionName == "histogrampopulation"){
                 POPULATION.hidden = false;
-                POPULATION.updateSd(POP_SD, getDistFunction());
+                POPULATION.update(POP_MEAN, POP_SD, BINS, getDistFunction());
             }
             else if (distributionName == "histogramsdm"){
                 SDM.hidden = false;
-                SDM.updateSd(POP_SD/Math.sqrt(getSampleSize()), calculateNormalDistribution);
+                SDM.update(POP_MEAN, POP_SD/Math.sqrt(getSampleSize()), BINS, calculateNormalDistribution);
             }
         }
         else{
@@ -459,7 +488,7 @@ window.onload=(function(){
 	// Change the population when a new option is chosen.
 	var popDropDown = document.getElementById("distributiontype");
 	popDropDown.onchange = function(){
-		console.log('changing dist');
+		resetAll();
 		changePopulation(this.value);
 	}
 	
