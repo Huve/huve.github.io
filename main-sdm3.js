@@ -244,6 +244,7 @@ window.onload=(function(){
       * @param {boolean} stop Whether or not the slider is stopped.
       */
     function setSampleSize(sampleSize, stop=false){
+		resetAll();
         var sampleSizeHolder = document.getElementById("samplesize");
         var distFunction = getDistFunction();
         sampleSizeHolder.value = sampleSize;
