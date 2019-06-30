@@ -271,7 +271,7 @@ window.onload=(function(){
 	// SAMPLE BUTTON (#sample)
     var sampleButton = document.getElementById("sample");
     sampleButton.onclick = function() {
-		var displayType = document.querySelector('input[name="displaytype"]:checked').value;
+		//var displayType = document.querySelector('input[name="displaytype"]:checked').value;
 		var numSamples = document.querySelector('input[name="samplenumber"]:checked').value;
 		var distType = document.getElementById("distributiontype").value;
 		var barHeight = 10/parseFloat(numSamples);
@@ -282,19 +282,11 @@ window.onload=(function(){
 			alert("Please enter an integer between 1 and 101 as a sample size");
 			return;
 		}
-		if (displayType == "means" & numSamples == "1"){
-			var sampleStats = sampleOnce(n, animate=true, display=false, dist=distType)
-			drawSampleMean(POP_SVG, sampleStats[0]);
-			displaySampleStats(sampleStats[0], sampleStats[0]);
-		}
-		else if (displayType == "means" & numSamples == "25"){
-			sampleMany(n, 10000, 60, distType);
-		}
-		else if (displayType == "sample" & numSamples == "1"){
+		else if (numSamples == "1"){
 			var sampleStats = sampleOnce(n, animate=true, display=true, hAdjust=1, dist=distType);
 			displaySampleStats(sampleStats[0], sampleStats[0]);
 		}
-		else if (displayType == "sample" & numSamples == "25"){
+		else if (numSamples == "25"){
 			sampleMany(n, 10000, 60, distType);
 		}
 		else{
@@ -463,16 +455,8 @@ window.onload=(function(){
             hideDistribution(distributionName, graphDimensions.height);
         }
     }
-  
-	// POPULATION CHECKBOX (#displaypopdistribution)
-   
-	var populationCheckbox = document.getElementById("displaypopdistribution");
-	populationCheckbox.addEventListener("change", function(e) {
-		changeDistributionDisplay(this.checked, "histogrampopulation");
-	});
 		
 	// SDM CHECKBOX (#displaysdmdistribution)
-       
 	var sdmCheckbox = document.getElementById("displaysdmdistribution");
 	sdmCheckbox.addEventListener("change", function(e) {
 		var distType = document.getElementById("distributiontype").value;

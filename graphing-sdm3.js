@@ -207,7 +207,7 @@ function processAnimatedBin(bins, map, value, dist){
 			return(binInfo);
 		}
 		else if (Math.abs(value - upper) < .01){
-			console.log('problem with ' + value + " " + upper);
+			
 			// skip this and default to lower bin val next iteration
 		}
 		else if (Math.abs(value - lower) < .01){
