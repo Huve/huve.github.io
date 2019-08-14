@@ -44,11 +44,12 @@ function bar(c, x, y, w, h, svg){
 
 /** Displays text on a graph */
 function displayText(g, t, x, y, c){
-	g.selectAll("text").remove()
+	g.selectAll(".stattext").remove()
 	g.append("text")
     .attr("x", x)
     .attr("y", y)
 	.attr("fill", c)
+	.attr("class", "stattext")
     .text(function(d) { return t });
 }
 
@@ -271,6 +272,73 @@ function animatedMeanBlock(svg, id, fill, dims, thisBin, graphDims, total_bins, 
 	.attr('y', yfinal-barHeight);
 }
 
+
+function drawAxisTicks(svg, graphDims, total_bins, writeText=false, type="normal"){
+	var defaultMinVal = 70;
+	var defaultIncrement =  6;
+	var counter = 0;
+	var tick1x = graphDims.width / total_bins * 50;
+	var tick2x = graphDims.width / total_bins * 550;
+	for (var i = 0; i < total_bins; i++){
+		if (type == "binomial"){
+			if (i == 50 | i == 550){
+				var tickText = svg.append('text')
+					.text(function(d) {
+						var tickVal = 0
+						return tickVal;
+					})
+					.attr({
+						x: tick1x,
+						y: 8
+					})
+					.attr('font-size', 9)
+					.style("text-anchor", "middle")
+				var tickText = svg.append('text')
+					.text(function(d) {
+						var tickVal = 1
+						return tickVal;
+					})
+					.attr({
+						x: tick2x,
+						y: 8
+					})
+					.attr('font-size', 9)
+					.style("text-anchor", "middle")
+			}
+		}
+		else {
+			if  (i % 100 == 0 & i > 0){
+				var counter = counter + 1;
+				var increment = graphDims.width / total_bins * i;
+				var axisTick = svg.append('line')
+				.attr({
+				x1: increment,
+				y1: graphDims.height,
+				x2: increment,
+				y2: graphDims.height - 10,
+				stroke: '#D3D3D3'
+				});
+
+				if(writeText == true){
+					var tickText = svg.append('text')
+					.text(function(d) {
+						var tickVal = defaultMinVal + (defaultIncrement * counter)
+						return tickVal;
+					})
+					.attr({
+						x: increment,
+						y: 8
+					})
+					.attr('font-size', 9)
+					.style("text-anchor", "middle")
+					
+				}
+			}
+		}
+	}
+}
+
+
     
 /**
   * Creates a histogram of a distribution.
@@ -344,6 +412,7 @@ function histogram(svg, id, fill, mean, sd, numBins){
 	    this.binomial_heights = [];
 		this.data = [];
 	}
+	
 	
     this.update = function(mean, sd, numBins, distFunction, binomial=false){
 		this.resetGraph();

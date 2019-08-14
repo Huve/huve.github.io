@@ -32,6 +32,9 @@ window.onload=(function(){
         setSampleSize(DEFAULT_SAMPLE_SIZE);
 		
 		updatePopText();
+		
+		drawAxisTicks(POP_SVG, graphDimensions, BINS);
+		drawAxisTicks(SDM_SVG, graphDimensions, BINS, true);
     }
     
     /**
@@ -287,7 +290,7 @@ window.onload=(function(){
 			displaySampleStats(sampleStats[0], sampleStats[0]);
 		}
 		else if (numSamples == "25"){
-			sampleMany(n, 10000, 60, distType);
+			sampleMany(n, 1000, 5, distType); // 10k, 60
 		}
 		else{
 			console.log("Sample display type is not set or number of samples is out of range");
@@ -346,10 +349,11 @@ window.onload=(function(){
 	function resetControls(){
 	}
 	
-	function resetGraphs(){
+	function resetGraphs(distChange){
 		clearFromGraph(".sample");
 		clearFromGraph(".animatedMean");
 		SDM_SVG.selectAll("text").remove();
+		drawAxisTicks(SDM_SVG, graphDimensions, BINS, true, distChange);
 		unlockButton("sample");
 		updatePopText();
 	}
@@ -359,7 +363,7 @@ window.onload=(function(){
 		var selectedDistribution = document.getElementById("distributiontype").value;
 		resetControls();
 		resetData(selectedDistribution);
-		resetGraphs();
+		resetGraphs(selectedDistribution);
 	}
 
 
@@ -460,8 +464,8 @@ window.onload=(function(){
 	var sdmCheckbox = document.getElementById("displaysdmdistribution");
 	sdmCheckbox.addEventListener("change", function(e) {
 		var distType = document.getElementById("distributiontype").value;
-		if (distType == "uniform"){
-			alert("Cannot display this when the population is uniform.");
+		if (distType == "uniform" | distType == "binomial"){
+			alert("Sorry, this demo can only display the sampling distribution of the mean when the population is normal.");
 			if (this.checked){ this.checked = false };
 		}
 		else{
